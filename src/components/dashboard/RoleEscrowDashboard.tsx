@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { DashboardGlassCard } from "./ui/DashboardGlassCard";
 import { ChevronRight, Download, SlidersHorizontal } from "lucide-react";
 import { useEffect, useRef, useState, useMemo } from "react";
@@ -108,6 +109,7 @@ export function RoleEscrowDashboard({
   error = null,
   onRefresh,
 }: RoleEscrowDashboardProps) {
+  const router = useRouter();
   const [notifications, setNotifications] =
     useState<NotificationData[]>(initialNotifications);
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -602,7 +604,10 @@ export function RoleEscrowDashboard({
                     ))}
                     {notifications.length > 3 && (
                       <div className="text-center">
-                        <button className="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
+                        <button
+                          onClick={() => router.push("/dashboard/notifications")}
+                          className="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+                        >
                           View all notifications
                         </button>
                       </div>

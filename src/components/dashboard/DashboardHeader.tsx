@@ -1,4 +1,5 @@
 import { Bell, BellRing, Menu, TrendingUp } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -24,6 +25,7 @@ export function DashboardHeader({
   showAnalytics = false,
   onToggleAnalytics,
 }: DashboardHeaderProps) {
+  const router = useRouter();
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const roleLabels = {
@@ -138,7 +140,10 @@ export function DashboardHeader({
             )}
 
             {notifications.length > 0 && (
-              <DropdownMenuItem className="text-sm font-medium text-center justify-center cursor-pointer hover:bg-muted/50">
+              <DropdownMenuItem
+                onClick={() => router.push("/dashboard/notifications")}
+                className="text-sm font-medium text-center justify-center cursor-pointer hover:bg-muted/50"
+              >
                 View all notifications
               </DropdownMenuItem>
             )}

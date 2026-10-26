@@ -3,29 +3,27 @@
 import { useState } from "react";
 import { Bell } from "lucide-react";
 import { NotificationItem } from "@/components/dashboard/NotificationItem";
+import type { NotificationData } from "@/types/dashboard";
 
 // TODO: replace with real Hasura query once public.notifications table is created
-const MOCK_NOTIFICATIONS = [
+const MOCK_NOTIFICATIONS: NotificationData[] = [
   {
     id: "1",
-    type: "success" as const,
-    title: "Escrow funded",
+    type: "payment",
     message: "Your escrow ST-1-1714000000000 has been funded.",
     timestamp: "Today at 10:22 AM",
     read: false,
   },
   {
     id: "2",
-    type: "info" as const,
-    title: "Bid accepted",
+    type: "milestone",
     message: "Your bid on La Sabana house was accepted.",
     timestamp: "Yesterday at 3:15 PM",
     read: true,
   },
   {
     id: "3",
-    type: "warning" as const,
-    title: "Action required",
+    type: "alert",
     message: "Sign the escrow contract before it expires.",
     timestamp: "May 30 at 9:00 AM",
     read: false,
@@ -33,7 +31,7 @@ const MOCK_NOTIFICATIONS = [
 ];
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<NotificationData[]>(MOCK_NOTIFICATIONS);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -85,11 +83,7 @@ export default function NotificationsPage() {
           {notifications.map((n) => (
             <NotificationItem
               key={n.id}
-              type={n.type}
-              title={n.title}
-              message={n.message}
-              timestamp={n.timestamp}
-              read={n.read}
+              notification={n}
               onClick={() => markRead(n.id)}
             />
           ))}

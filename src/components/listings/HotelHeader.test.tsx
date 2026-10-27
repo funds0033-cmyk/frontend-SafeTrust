@@ -13,8 +13,24 @@ jest.mock("next/image", () => ({
   ),
 }));
 
+jest.mock("next/navigation", () => ({
+  usePathname: () => "/rent",
+  useRouter: () => ({ push: jest.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 jest.mock("@/components/ui/ThemeToggle", () => ({
   ThemeToggle: () => <button type="button">Theme</button>,
+}));
+
+jest.mock("@/features/listings/wishlist/useWishlist", () => ({
+  useWishlist: () => mockWishlist,
+}));
+
+let mockWishlist = { signedIn: false, ids: [] as string[] };
+
+jest.mock("@/components/navigation/AccountMenu", () => ({
+  AccountMenu: () => <button type="button">Account menu</button>,
 }));
 
 describe("HotelHeader rent navigation", () => {
@@ -41,6 +57,20 @@ describe("HotelHeader rent navigation", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
+  it("preserves the current search when switching between listing views", () => {
+    render(
+      <HotelHeader listingSearchParams="location=Heredia&adults=2&selected=5" />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Rent" }));
+
+    expect(
+      screen.getByRole("menuitem", { name: /browse all units/i }),
+    ).toHaveAttribute("href", "/rent?location=Heredia&adults=2");
+    expect(
+      screen.getByRole("menuitem", { name: /^suggestions/i }),
+    ).toHaveAttribute("href", "/guest/suggestions?location=Heredia&adults=2");
+  });
+
   it("closes on outside click", () => {
     render(<HotelHeader />);
     const trigger = screen.getByRole("button", { name: "Rent" });
@@ -59,28 +89,55 @@ describe("HotelHeader rent navigation", () => {
   });
 });
 
-describe("HotelHeader lucide icons", () => {
-  const lucideIconTestIds = [
-    "header-search-icon",
-    "header-notification-icon",
-    "header-user-icon",
-  ] as const;
+describe("HotelHeader account actions", () => {
+  it("links signed-out visitors to Wishlists through login", () => {
+    mockWishlist = { signedIn: false, ids: [] };
+    render(<HotelHeader />);
+    expect(screen.getByRole("link", { name: "Wishlists" })).toHaveAttribute(
+      "href",
+      "/login?redirect=%2Fdashboard%2Ffavorites",
+    );
+  });
 
-  it("renders the header icons as lucide SVGs", () => {
+  it("shows the saved count to signed-in guests", () => {
+    mockWishlist = { signedIn: true, ids: ["1", "2"] };
+    render(<HotelHeader />);
+    expect(
+      screen.getByRole("link", { name: "Wishlists, 2 saved" }),
+    ).toHaveAttribute("href", "/dashboard/favorites");
+  });
+
+  it("uses the account menu instead of a hard-coded name and unread dot", async () => {
+    const { container } = render(<HotelHeader />);
+    expect(
+      await screen.findByRole("button", { name: "Account menu" }),
+    ).toBeInTheDocument();
+    expect(container).not.toHaveTextContent("Randall Valenciano");
+    expect(container.querySelector(".bg-orange-500")).toBeNull();
+  });
+});
+
+describe("HotelHeader lucide icons", () => {
+  const lucideIconTestIds = ["header-search-icon"] as const;
+
+  it("renders the header icons as lucide SVGs", async () => {
     render(<HotelHeader />);
 
     for (const testId of lucideIconTestIds) {
-      const icon = screen.getByTestId(testId);
+      const icon = await screen.findByTestId(testId);
       expect(icon.tagName).toBe("svg");
       expect(icon.getAttribute("class")).toContain("lucide");
     }
   });
 
-  it("marks every header icon as decorative with aria-hidden", () => {
+  it("marks every header icon as decorative with aria-hidden", async () => {
     render(<HotelHeader />);
 
     for (const testId of lucideIconTestIds) {
-      expect(screen.getByTestId(testId)).toHaveAttribute("aria-hidden", "true");
+      expect(await screen.findByTestId(testId)).toHaveAttribute(
+        "aria-hidden",
+        "true",
+      );
     }
   });
 

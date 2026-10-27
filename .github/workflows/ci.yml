@@ -39,6 +39,9 @@ jobs:
         run: npm install --global npm@10.9.2
       - name: Install dependencies
         run: npm ci --fetch-retries=5 --fetch-retry-factor=2 --fetch-retry-mintimeout=10000 --fetch-retry-maxtimeout=60000
+      - name: Thin-page check (FE-56)
+        run: node scripts/check-thin-pages.mjs
+
       - name: Lint (zero warnings)
         run: npx eslint . --max-warnings=0
       - name: Typecheck
@@ -49,6 +52,8 @@ jobs:
         run: npm run knip
       - name: Build
         run: npm run build
+      - name: Route group bundle size budgets
+        run: npm run size:check
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3

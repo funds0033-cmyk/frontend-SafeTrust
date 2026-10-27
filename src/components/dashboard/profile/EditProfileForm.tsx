@@ -3,20 +3,20 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, updateProfile } from "firebase/auth";
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { AccountOverviewTable } from "./AccountOverviewTable";
+import { listWallets } from "@/features/account/wallets";
 import { AvatarUpload } from "./AvatarUpload";
+
+const AccountOverviewTable = dynamic(() =>
+  import("./AccountOverviewTable").then(
+    (module) => module.AccountOverviewTable,
+  ),
+);
 
 interface ProfileFormData {
   firstName: string;
@@ -30,7 +30,7 @@ interface ProfileFormData {
 
 interface AccountData {
   createdAt: string;
-  walletAddress: string;
+  walletAddress: string | null;
   email: string;
 }
 
@@ -45,19 +45,19 @@ const EMPTY_FORM: ProfileFormData = {
 };
 
 const COUNTRY_CODES = [
-  { code: "+1",   flag: "🇺🇸", label: "+1" },
-  { code: "+44",  flag: "🇬🇧", label: "+44" },
+  { code: "+1", flag: "🇺🇸", label: "+1" },
+  { code: "+44", flag: "🇬🇧", label: "+44" },
   { code: "+506", flag: "🇨🇷", label: "+506" },
-  { code: "+52",  flag: "🇲🇽", label: "+52" },
-  { code: "+55",  flag: "🇧🇷", label: "+55" },
-  { code: "+34",  flag: "🇪🇸", label: "+34" },
+  { code: "+52", flag: "🇲🇽", label: "+52" },
+  { code: "+55", flag: "🇧🇷", label: "+55" },
+  { code: "+34", flag: "🇪🇸", label: "+34" },
 ];
 
 export function EditProfileForm() {
   const [form, setForm] = useState<ProfileFormData>(EMPTY_FORM);
   const [account, setAccount] = useState<AccountData>({
     createdAt: "—",
-    walletAddress: "—",
+    walletAddress: "No wallet linked",
     email: "—",
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -81,9 +81,26 @@ export function EditProfileForm() {
           createdAt: user.metadata.creationTime
             ? new Date(user.metadata.creationTime).toLocaleDateString("en-GB")
             : "—",
-          walletAddress: "—", // TODO: read from Hasura → public.users.wallet_address
+          walletAddress: "No wallet linked",
           email: user.email ?? "—",
         });
+        void user
+          .getIdToken()
+          .then(listWallets)
+          .then(
+            ({ wallets }) => {
+              const primaryWallet = wallets.find((wallet) => wallet.isPrimary);
+              setAccount((current) => ({
+                ...current,
+                walletAddress: primaryWallet?.address ?? "No wallet linked",
+              }));
+            },
+            (error: unknown) => {
+              console.error("Failed to load linked wallet:", error);
+              setAccount((current) => ({ ...current, walletAddress: null }));
+              toast.error("Couldn't load your primary wallet.");
+            },
+          );
       }
       setIsInitializing(false);
     });
@@ -129,10 +146,11 @@ export function EditProfileForm() {
   };
 
   // ── Derive initials ───────────────────────────────────────────────────────
-  const initials = [form.firstName[0], form.surnames[0]]
-    .filter(Boolean)
-    .join("")
-    .toUpperCase() || "?";
+  const initials =
+    [form.firstName[0], form.surnames[0]]
+      .filter(Boolean)
+      .join("")
+      .toUpperCase() || "?";
 
   if (isInitializing) {
     return (
@@ -148,9 +166,10 @@ export function EditProfileForm() {
     <form onSubmit={handleSubmit} className="w-full">
       <h1 className="text-2xl font-semibold mb-4">Edit profile</h1>
 
-      <div className="border border-gray-200 dark:border-gray-700
-                      rounded-lg p-6 space-y-6">
-
+      <div
+        className="border border-gray-200 dark:border-gray-700
+                      rounded-lg p-6 space-y-6"
+      >
         {/* Avatar + Summary */}
         <div className="flex gap-4">
           <AvatarUpload
@@ -204,23 +223,20 @@ export function EditProfileForm() {
           <div>
             <Label className="mb-1.5 block">Phone</Label>
             <div className="flex gap-2">
-              <Select
+              <select
+                aria-label="Country code"
                 value={form.countryCode}
-                onValueChange={(val) =>
-                  setForm((prev) => ({ ...prev, countryCode: val }))
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, countryCode: e.target.value }))
                 }
+                className="h-9 w-28 shrink-0 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800"
               >
-                <SelectTrigger className="w-28 shrink-0">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {COUNTRY_CODES.map(({ code, flag, label }) => (
-                    <SelectItem key={code} value={code}>
-                      {flag} {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                {COUNTRY_CODES.map(({ code, flag, label }) => (
+                  <option key={code} value={code} className="dark:bg-gray-900 text-foreground">
+                    {flag} {label}
+                  </option>
+                ))}
+              </select>
               <Input
                 value={form.phone}
                 onChange={handleChange("phone")}

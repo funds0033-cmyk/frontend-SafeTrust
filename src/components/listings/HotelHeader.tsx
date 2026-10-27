@@ -2,20 +2,44 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import {
-  Bell,
-  ChevronDown,
-  CircleUserRound,
-  Grid2X2,
-  Heart,
-  Lightbulb,
-  Search,
-} from "lucide-react";
+import { listingHref } from "@/features/listings/search/links";
+import { AccountMenuSkeleton } from "@/components/navigation/AccountMenuSkeleton";
+import { ACCOUNT_ROUTES, loginHref } from "@/components/navigation/account-routes";
+import { useWishlist } from "@/features/listings/wishlist/useWishlist";
+import { ChevronDown, Grid2X2, Heart, Lightbulb } from "lucide-react";
+
+/**
+ * Code-split: the menu brings in the Radix dropdown and Firebase auth state,
+ * which would otherwise land in this header's first-load JS and push the
+ * marketing/app routes past their `scripts/route-budgets.js` budgets.
+ */
+const AccountMenu = dynamic(
+  () =>
+    import("@/components/navigation/AccountMenu").then(
+      (mod) => mod.AccountMenu,
+    ),
+  { ssr: false, loading: () => <AccountMenuSkeleton /> },
+);
+
+const SearchComposer = dynamic(
+  () =>
+    import("@/features/listings/search/SearchComposer").then(
+      (module) => module.SearchComposer,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-11 min-w-0 flex-1 rounded-full border border-border bg-muted/60" />
+    ),
+  },
+);
 
 interface HotelHeaderProps {
   showHostSwitch?: boolean;
+  listingSearchParams?: string;
 }
 
 const RENT_ITEMS = [
@@ -40,7 +64,11 @@ const RENT_ITEMS = [
 ] as const;
 
 /** Render the shared rent destination menu. */
-export function RentDropdown() {
+export function RentDropdown({
+  listingSearchParams,
+}: {
+  listingSearchParams?: string;
+}) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -75,7 +103,7 @@ export function RentDropdown() {
         aria-expanded={open}
         aria-controls="rent-navigation-menu"
         onClick={() => setOpen((current) => !current)}
-        className="flex items-center gap-2 rounded-full bg-background px-4 py-2 text-sm text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+        className="flex items-center gap-2 rounded-full bg-background px-4 py-2 text-sm text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         Rent
         <ChevronDown
@@ -94,13 +122,21 @@ export function RentDropdown() {
           {RENT_ITEMS.map(({ icon: Icon, label, description, href }) => (
             <Link
               key={href}
-              href={href}
+              href={
+                listingSearchParams === undefined ||
+                href === "/dashboard/favorites"
+                  ? href
+                  : listingHref(href, new URLSearchParams(listingSearchParams))
+              }
               role="menuitem"
               onClick={() => setOpen(false)}
               className="flex items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted focus:bg-muted focus:outline-none"
             >
-              <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-orange-100 dark:bg-orange-900/30">
-                <Icon aria-hidden="true" className="h-4 w-4 text-orange-500" />
+              <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent">
+                <Icon
+                  aria-hidden="true"
+                  className="h-4 w-4 text-accent-foreground"
+                />
               </span>
               <span>
                 <span className="block text-sm font-medium text-gray-900 dark:text-white">
@@ -120,13 +156,22 @@ export function RentDropdown() {
 
 export default function HotelHeader({
   showHostSwitch = false,
+  listingSearchParams,
 }: HotelHeaderProps) {
-  return <HotelHeaderContent showHostSwitch={showHostSwitch} />;
+  return (
+    <HotelHeaderContent
+      showHostSwitch={showHostSwitch}
+      listingSearchParams={listingSearchParams}
+    />
+  );
 }
 
-function HotelHeaderContent({ showHostSwitch }: HotelHeaderProps) {
+function HotelHeaderContent({
+  showHostSwitch,
+  listingSearchParams,
+}: HotelHeaderProps) {
   return (
-    <header className="border-b border-border bg-background">
+    <header className="theme-guest border-b border-border bg-background">
       <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-4 px-4 py-5 sm:flex-nowrap sm:px-6 lg:px-8">
         <Link href="/" className="flex shrink-0 items-center gap-3">
           <Image src="/img/logo.png" alt="SafeTrust" width={36} height={36} />
@@ -135,24 +180,16 @@ function HotelHeaderContent({ showHostSwitch }: HotelHeaderProps) {
           </span>
         </Link>
 
-        <div className="order-3 mx-0 flex min-w-0 w-full items-center rounded-full border border-border bg-muted/60 px-2 py-1.5 sm:order-none sm:mx-auto sm:w-auto sm:flex-1 sm:max-w-md">
-          <RentDropdown />
-          <div className="mx-3 h-6 w-px bg-gray-300 dark:bg-slate-600" />
-          <span className="min-w-0 truncate text-sm text-gray-600 dark:text-gray-300">
-            City, province or neighborhood
-          </span>
-          <Search
-            aria-hidden="true"
-            data-testid="header-search-icon"
-            className="ml-auto h-4 w-4 shrink-0 text-gray-600 dark:text-gray-300"
-          />
+        <div className="order-3 mx-0 flex min-w-0 w-full items-center gap-2 sm:order-none sm:mx-auto sm:w-auto sm:flex-1 sm:max-w-md">
+          <RentDropdown listingSearchParams={listingSearchParams} />
+          <SearchComposer />
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-5">
           {showHostSwitch && (
             <Link
               href="/dashboard/escrow-dashboard"
-              className="hidden text-sm font-semibold text-orange-700 transition-colors hover:text-orange-800 sm:block whitespace-nowrap"
+              className="hidden text-sm font-semibold text-primary transition-colors hover:text-primary/80 sm:block whitespace-nowrap"
             >
               Switch to Host view
             </Link>
@@ -160,26 +197,32 @@ function HotelHeaderContent({ showHostSwitch }: HotelHeaderProps) {
           <div className="hidden md:block">
             <ThemeToggle />
           </div>
-          <div className="relative">
-            <Bell
-              aria-hidden="true"
-              data-testid="header-notification-icon"
-              className="h-4 w-4 text-gray-900 dark:text-white"
-            />
-            <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-orange-500" />
-          </div>
-          <span className="hidden text-sm font-semibold text-foreground lg:block">
-            Randall Valenciano
-          </span>
-          <div className="grid h-10 w-10 place-items-center rounded-full border border-gray-200 bg-gray-100 dark:border-slate-700 dark:bg-slate-800">
-            <CircleUserRound
-              aria-hidden="true"
-              data-testid="header-user-icon"
-              className="h-5 w-5 text-gray-900 dark:text-white"
-            />
-          </div>
+          <WishlistsButton />
+          <AccountMenu />
         </div>
       </div>
     </header>
+  );
+}
+function WishlistsButton() {
+  const { signedIn, ids } = useWishlist();
+  const count = ids.length;
+
+  return (
+    <Link
+      href={signedIn ? ACCOUNT_ROUTES.wishlists : loginHref(ACCOUNT_ROUTES.wishlists)}
+      aria-label={`Wishlists${count ? `, ${count} saved` : ""}`}
+      className="relative grid h-11 w-11 place-items-center rounded-full text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <Heart className="h-5 w-5" aria-hidden="true" />
+      {count > 0 && (
+        <span
+          aria-hidden="true"
+          className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-primary px-1 text-center text-[10px] font-semibold text-primary-foreground"
+        >
+          {count}
+        </span>
+      )}
+    </Link>
   );
 }

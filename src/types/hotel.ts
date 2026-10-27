@@ -33,15 +33,4 @@ export interface ApartmentListing extends ApartmentAmenitySummary {
   owner: ApartmentOwner;
   description: string;
   rating: number;
-  favorite?: boolean;
-}
-
-export interface HotelSearchResult {
-  id: number;
-  name: string;
-  image: string;
-  location: string;
-  stars: number;
-  price: number;
-  isFavorite: boolean;
 }

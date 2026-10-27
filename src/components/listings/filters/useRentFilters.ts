@@ -6,13 +6,14 @@ import {
   APARTMENT_CATEGORIES,
   APARTMENT_LOCATIONS,
 } from "@/lib/mockData/apartmentListings";
+import { localToday } from "@/features/listings/search/date-only";
 import {
-  localToday,
   parseStaySearch,
   writeStaySearch,
-} from "@/features/listings";
+} from "@/features/listings/search/stay-search";
 
-export const PRICE_BOUNDS = { min: 0, max: 250_000 } as const;
+/** Nightly USD. Keep max ≥ the most expensive demo listing (enforced by a test). */
+export const PRICE_BOUNDS = { min: 0, max: 200, step: 5 } as const;
 export type SortOption = "relevance" | "price-low" | "price-high" | "nearest";
 export type Category = (typeof APARTMENT_CATEGORIES)[number];
 export type Location = (typeof APARTMENT_LOCATIONS)[number];
@@ -35,6 +36,15 @@ export const DEFAULT_FILTERS: RentFilters = {
   maxPrice: PRICE_BOUNDS.max,
   sort: "relevance",
 };
+
+const FILTER_PARAM_KEYS = [
+  "categories",
+  "location",
+  "bedrooms",
+  "min",
+  "max",
+  "sort",
+] as const;
 
 export function resolveSortOption(
   sort: SortOption,
@@ -120,7 +130,10 @@ export function useRentFilters() {
         ...baseFilters,
         ...(typeof patch === "function" ? patch(baseFilters) : patch),
       };
-      const query = new URLSearchParams();
+      const query = new URLSearchParams(
+        pendingFilters.current?.params ?? paramsString,
+      );
+      for (const key of FILTER_PARAM_KEYS) query.delete(key);
       if (next.categories.length) {
         query.set("categories", next.categories.join(","));
       }
@@ -155,11 +168,22 @@ export function useRentFilters() {
   );
 
   const reset = useCallback(() => {
+    const query = new URLSearchParams(
+      pendingFilters.current?.params ?? paramsString,
+    );
+    for (const key of FILTER_PARAM_KEYS) query.delete(key);
+    const queryString = query.toString();
     const requests = pendingFilters.current?.requests ?? new Set<string>();
-    requests.add("");
-    pendingFilters.current = { params: "", filters: DEFAULT_FILTERS, requests };
-    router.replace(pathname, { scroll: false });
-  }, [pathname, router]);
+    requests.add(queryString);
+    pendingFilters.current = {
+      params: queryString,
+      filters: DEFAULT_FILTERS,
+      requests,
+    };
+    router.replace(queryString ? `${pathname}?${queryString}` : pathname, {
+      scroll: false,
+    });
+  }, [paramsString, pathname, router]);
 
   const activeCount =
     filters.categories.length +

@@ -86,6 +86,7 @@ interface RoleEscrowDashboardProps {
   isLoading?: boolean;
   error?: string | null;
   onRefresh?: () => void;
+  onEscrowUpdated?: (row: EscrowData) => void;
 }
 
 const STATUS_OPTIONS = [
@@ -111,6 +112,7 @@ export function RoleEscrowDashboard({
   isLoading = false,
   error = null,
   onRefresh,
+  onEscrowUpdated,
 }: RoleEscrowDashboardProps) {
   const [notifications, setNotifications] =
     useState<NotificationData[]>(initialNotifications);
@@ -871,7 +873,10 @@ export function RoleEscrowDashboard({
             </div>
           </div>
           <div className="overflow-x-auto">
-            <EscrowTable escrows={filteredTransactions} userRole={userRole} />
+            <EscrowTable
+              escrows={filteredTransactions}
+              onRowUpdated={onEscrowUpdated}
+            />
           </div>
         </DashboardGlassCard>
       </div>

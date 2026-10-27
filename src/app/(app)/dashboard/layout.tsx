@@ -84,7 +84,7 @@ const Layout = ({ children }: { children: ReactNode }) => {
                 isOpen={isSidebarOpen}
                 onClose={() => setIsSidebarOpen(false)}
               />
-              <SideBar variant="permanent" notificationCount={1} />
+              <SideBar variant="permanent" />
             </>
           )}
 

@@ -8,11 +8,11 @@ import { UnreadBadge } from "@/components/messages/UnreadBadge";
 import { DemoBadge } from "@/components/ui/demo-badge";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { navIconClass, navItemClass } from "./nav-item-styles";
+import { useUnreadNotificationCount } from "@/hooks/useNotifications";
 import { NAV_ITEMS, isActive } from "./nav-items";
 
 interface SideBarProps {
   className?: string;
-  notificationCount?: number;
   isOpen?: boolean;
   onClose?: () => void;
   variant?: "drawer" | "permanent";
@@ -20,12 +20,12 @@ interface SideBarProps {
 
 export function SideBar({
   className,
-  notificationCount = 0,
   isOpen,
   onClose,
   variant = "permanent",
 }: SideBarProps) {
   const pathname = usePathname();
+  const notificationCount = useUnreadNotificationCount();
   // Identity comes from verified Firebase ID token claims, never from a
   // hardcoded mock user or client-controlled storage.
   const { user } = useCurrentUser();
@@ -70,8 +70,14 @@ export function SideBar({
                 </span>
                 {item.badge === "messages" && user?.uid && <UnreadBadge />}
                 {item.badge === "notifications" && notificationCount > 0 && (
-                  <span className="ml-auto rounded-full bg-destructive px-1.5 text-xs text-white">
-                    {notificationCount}
+                  <span
+                    data-testid="sidebar-notification-unread-count"
+                    className="ml-auto flex min-w-[18px] shrink-0 items-center justify-center rounded-full bg-sky-700 px-1.5 text-xs font-bold text-white dark:bg-sky-400 dark:text-slate-950"
+                  >
+                    <span aria-hidden="true">{notificationCount}</span>
+                    <span className="sr-only">
+                      {notificationCount} unread notifications
+                    </span>
                   </span>
                 )}
               </Link>

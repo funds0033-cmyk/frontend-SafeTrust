@@ -155,6 +155,9 @@ test("searching from suggestions retains the listing filters", async ({
   await expect(
     page.getByRole("heading", { name: "Jardín de Heredia House" }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Select Jardín de Heredia House" }),
+  ).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("button", { name: /Casa Níspero/ })).toHaveCount(
     0,
   );

@@ -24,6 +24,12 @@ test("Nearby location survives navigation from suggestions to rentals", async ({
     name: /^Search stays:/,
   });
   await waitForHydration(searchTrigger);
+  await searchTrigger.click();
+
+  const where = page.getByRole("searchbox", {
+    name: "Search destinations",
+  });
+  await waitForHydration(where);
   await expect
     .poll(() =>
       page.evaluate(
@@ -32,7 +38,7 @@ test("Nearby location survives navigation from suggestions to rentals", async ({
       ),
     )
     .toBe(0);
-  await searchTrigger.click();
+  await where.click();
   await page
     .getByRole("option", { name: /Nearby.*Find what's around you/ })
     .click();

@@ -10,12 +10,12 @@ Each section is labelled with its status:
 
 ## Two-repo strategy (Current, Demo, Planned)
 
-| | Current in this repo | Demo data | Planned (backend-SafeTrust / Hasura) |
-| --- | --- | --- | --- |
-| **Listings** | Apartment listings use a live Hasura adapter in `src/features/apartments` | Fixture listings in `src/lib/mockData` for screens not yet wired | Hasura as the source for all listings |
-| **Escrow** | Booking checkout deploys and funds real escrows with `@trustless-work/escrow` on Stellar. The network comes from `NEXT_PUBLIC_TRUSTLESS_NETWORK`, which defaults to `testnet` | Demo flows read escrow status through `useEscrowSubscription` | Escrow state written only by backend-SafeTrust and read through Hasura subscriptions |
-| **Backend calls** | Some screens call the backend through `BACKEND_URL` | Other screens return fixture responses | backend-SafeTrust as the single write authority |
-| **Webhooks** | None. This repo exposes no webhook endpoints | Not applicable | Trustless Work webhooks deliver to backend-SafeTrust (`trustless_work_webhook_events`) |
+|                   | Current in this repo                                                                                                                                                          | Demo data                                                        | Planned (backend-SafeTrust / Hasura)                                                   |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| **Listings**      | Apartment listings use a live Hasura adapter in `src/features/apartments`                                                                                                     | Fixture listings in `src/lib/mockData` for screens not yet wired | Hasura as the source for all listings                                                  |
+| **Escrow**        | Booking checkout deploys and funds real escrows with `@trustless-work/escrow` on Stellar. The network comes from `NEXT_PUBLIC_TRUSTLESS_NETWORK`, which defaults to `testnet` | Demo flows read escrow status through `useEscrowSubscription`    | Escrow state written only by backend-SafeTrust and read through Hasura subscriptions   |
+| **Backend calls** | Some screens call the backend through `BACKEND_URL`                                                                                                                           | Other screens return fixture responses                           | backend-SafeTrust as the single write authority                                        |
+| **Webhooks**      | None. This repo exposes no webhook endpoints                                                                                                                                  | Not applicable                                                   | Trustless Work webhooks deliver to backend-SafeTrust (`trustless_work_webhook_events`) |
 
 The UI observes escrow changes through `useEscrowSubscription`. It is a mock in this repo and a Hasura subscription in the integrated app. Only the hook changes when a component is promoted.
 
@@ -25,7 +25,7 @@ The UI observes escrow changes through `useEscrowSubscription`. It is a mock in 
 
 ```text
 src/lib/mockData/                  ← source of truth for stub data
-src/hooks/useApartments.ts         ← mock hook (Apollo { data, loading, error } shape)
+src/features/apartments/           ← host apartments repository (demo adapter in memory, live adapter on Hasura)
 src/hooks/useEscrowSubscription.ts ← mock hook ({ escrow, loading, error } shape)
 ```
 
@@ -90,16 +90,16 @@ This is the **slice pattern**. frontend-SafeTrust is the design and UX source of
 
 ## Dependency rules (Current)
 
-| Package | Allowed | Notes |
-| --- | --- | --- |
-| `lucide-react` | ✅ | Icons. Use this, not `react-icons` |
-| `sonner` | ✅ | Toast notifications |
-| `zustand` | ✅ | Auth store |
-| `date-fns` | ✅ | Date formatting in messages |
-| `firebase` | ✅ | Client SDK only (login and register forms) |
-| `@trustless-work/escrow` | ✅ | Used by `src/features/escrow` and `src/providers/EscrowProviders.tsx`. Mounted only where escrow is needed |
-| `@apollo/client` | ❌ | Integrated app only |
-| `react-icons` | ❌ | Use `lucide-react` |
-| `@stellar/freighter-api` | ❌ | Integrated app only |
+| Package                  | Allowed | Notes                                                                                                      |
+| ------------------------ | ------- | ---------------------------------------------------------------------------------------------------------- |
+| `lucide-react`           | ✅      | Icons. Use this, not `react-icons`                                                                         |
+| `sonner`                 | ✅      | Toast notifications                                                                                        |
+| `zustand`                | ✅      | Auth store                                                                                                 |
+| `date-fns`               | ✅      | Date formatting in messages                                                                                |
+| `firebase`               | ✅      | Client SDK only (login and register forms)                                                                 |
+| `@trustless-work/escrow` | ✅      | Used by `src/features/escrow` and `src/providers/EscrowProviders.tsx`. Mounted only where escrow is needed |
+| `@apollo/client`         | ❌      | Integrated app only                                                                                        |
+| `react-icons`            | ❌      | Use `lucide-react`                                                                                         |
+| `@stellar/freighter-api` | ❌      | Integrated app only                                                                                        |
 
 > **Verified against:** `package.json`, `src/features/escrow`, `src/providers/EscrowProviders.tsx` at `ad2f38d7`. Status: Current.

@@ -84,7 +84,7 @@ const Layout = ({ children }: { children: ReactNode }) => {
                 isOpen={isSidebarOpen}
                 onClose={() => setIsSidebarOpen(false)}
               />
-              <SideBar variant="permanent" notificationCount={1} />
+              <SideBar variant="permanent" />
             </>
           )}
 
@@ -95,9 +95,7 @@ const Layout = ({ children }: { children: ReactNode }) => {
           >
             <div
               className={`w-full min-w-0 ${
-                !isProfileSettingsPage
-                  ? "p-4 md:p-8 lg:p-10"
-                  : "p-4 md:p-6"
+                !isProfileSettingsPage ? "p-4 md:p-8 lg:p-10" : "p-4 md:p-6"
               }`}
             >
               <DashboardReveal key={pathname}>{children}</DashboardReveal>

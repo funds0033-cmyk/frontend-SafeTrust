@@ -83,6 +83,7 @@ interface RoleEscrowDashboardProps {
   isLoading?: boolean;
   error?: string | null;
   onRefresh?: () => void;
+  onEscrowUpdated?: (row: EscrowData) => void;
 }
 
 const STATUS_OPTIONS = [
@@ -108,6 +109,7 @@ export function RoleEscrowDashboard({
   isLoading = false,
   error = null,
   onRefresh,
+  onEscrowUpdated,
 }: RoleEscrowDashboardProps) {
   const router = useRouter();
   const [notifications, setNotifications] =
@@ -605,7 +607,9 @@ export function RoleEscrowDashboard({
                     {notifications.length > 3 && (
                       <div className="text-center">
                         <button
-                          onClick={() => router.push("/dashboard/notifications")}
+                          onClick={() =>
+                            router.push("/dashboard/notifications")
+                          }
                           className="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
                         >
                           View all notifications
@@ -865,7 +869,10 @@ export function RoleEscrowDashboard({
             </div>
           </div>
           <div className="overflow-x-auto">
-            <EscrowTable escrows={filteredTransactions} userRole={userRole} />
+            <EscrowTable
+              escrows={filteredTransactions}
+              onRowUpdated={onEscrowUpdated}
+            />
           </div>
         </DashboardGlassCard>
       </div>

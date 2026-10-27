@@ -1,4 +1,3 @@
-import { describe, it, expect } from "@jest/globals";
 import { notificationHref, NOTIFICATIONS_PATH } from "./notificationHref";
 
 describe("notificationHref", () => {
